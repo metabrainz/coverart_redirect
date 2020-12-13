@@ -312,10 +312,16 @@ class ArtworkRedirect(object):
 
         raise NotFound("event image with id %s not found" % (image_id))
 
-    def handle_index(self):
+    def handle_index(self, request, index_page=None):
         """Serve up the one static index page."""
+        if index_page is None:
+            index_page = "index.html"
+            if request.host == 'coverartarchive.org':
+                index_page = "coverartarchive.html"
+            elif request.host == "eventartarchive.org":
+                index_page = "eventartarchive.html"
         try:
-            f = open(os.path.join(self.config.static_path, "index.html"))
+            f = open(os.path.join(self.config.static_path, index_page))
         except IOError:
             get_sentry().captureException()
             return Response(status=500, response="Internal Server Error")
@@ -458,7 +464,11 @@ class ArtworkRedirect(object):
             return self.handle_options(request, entity)
 
         if not entity:
-            return self.handle_index()
+            return self.handle_index(request)
+        elif entity == "coverartarchive.html":
+            return self.handle_index(request, "coverartarchive.html")
+        elif entity == "eventartarchive.html":
+            return self.handle_index(request, "eventartarchive.html")
         elif entity == "robots.txt":
             return self.handle_robots()
         elif entity == "img":
