@@ -227,29 +227,6 @@ class CoverArtRedirect(object):
         f.close()
         return Response(response=txt, mimetype='text/html')
 
-    def handle_css(self):
-        try:
-            f = open(os.path.join(self.config.static_path, "css", "main.css"))
-        except IOError:
-            get_sentry().captureException()
-            return Response(status=500, response="Internal Server Error")
-        txt = f.read()
-        f.close()
-        return Response(response=txt, mimetype="text/css")
-
-    def handle_js(self, name):
-        js_dir = os.path.join(self.config.static_path, "js")
-        if name not in os.listdir(js_dir):
-            raise NotFound
-        try:
-            f = open(os.path.join(js_dir, name))
-        except IOError:
-            get_sentry().captureException()
-            return Response(status=500, response="Internal Server Error")
-        txt = f.read()
-        f.close()
-        return Response(response=txt, mimetype="application/javascript")
-
     def handle_svg_img(self, name):
         img_dir = os.path.join(self.config.static_path, "img")
         if name not in os.listdir(img_dir):
@@ -375,12 +352,8 @@ class CoverArtRedirect(object):
             return self.handle_index()
         elif entity == "robots.txt":
             return self.handle_robots()
-        elif entity == "main.css":
-            return self.handle_css()
         elif entity == "img":
             return self.handle_svg_img(pop_path_info(request.environ))
-        elif entity == "js":
-            return self.handle_js(pop_path_info(request.environ))
         elif entity == 'api':
             return self.handle_api(request)
 

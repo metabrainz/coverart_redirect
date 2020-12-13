@@ -20,15 +20,7 @@ RUN sudo -E -H -u art pip install --user -U cffi
 COPY requirements.txt ./
 RUN sudo -E -H -u art pip install --user -r requirements.txt
 
-# Node dependencies
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-RUN apt-get install -y nodejs
-COPY package.json package-lock.json ./
-RUN sudo -E -H -u art npm install
-
 COPY . ./
-RUN sudo -E -H -u art ./node_modules/.bin/lessc \
-        static/css/main.less > static/css/main.css
 RUN chown -R art:art ./
 
 ############

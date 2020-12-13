@@ -5,87 +5,200 @@
   <title>Cover Art Archive</title>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <link rel="icon" sizes="32x32" href="/favicon.png" type="image/png" />
-  <link href="/main.css" rel="stylesheet" media="screen" />
+  <style>
+    @import url(https://fonts.googleapis.com/css?family=Roboto:100,400,300,700|Sintony:200,400,700&subset=latin,latin-ext,cyrillic,cyrillic-ext);
+    body {
+      color: #46433A;
+      font-family: Sintony, sans-serif;
+      margin: 0 auto 25px auto;
+      font-size: 14px;
+      line-height: 1.42857143;
+      padding: 0 15px;
+    }
+    p {
+      margin: 0 0 10px;
+    }
+    a {
+      font-weight: 700;
+      color: #4E7EC2;
+      text-decoration: none;
+    }
+    nav {
+      margin: 0 0 20px 0;
+      display: flex;
+      min-height: 64px;
+    }
+    nav img {
+      height: 26px;
+      padding: 17px 17px 15px 0;
+    }
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      margin-top: 13px;
+      margin-left: 15px;
+      display: flex;
+      flex-grow: 1;
+      justify-content: flex-end;
+      border-bottom: 2px solid #20656C;
+      align-items: flex-end;
+    }
+    nav li {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    nav a {
+      color: #20656C;
+      font-size: 1.1em;
+      font-family: Roboto, sans-serif;
+      padding: 10px 15px;
+      line-height: 20px;
+    }
+    nav a:hover {
+      color: #FFFBFE;
+      background-color: #20656C;
+    }
+    h1 {
+      font-family: Roboto, sans-serif;
+      font-weight: 300;
+      font-size: 36px;
+      margin-top: 40px;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+    #big-logo {
+      float: left;
+      margin-top: 27px;
+      margin-right: 26px;
+      height: 128px;
+    }
+    #images {
+      float: right;
+      width: 140px;
+      text-align: center;
+    }
+    #images a {
+      display: block;
+    }
+    #images img {
+      width: 100px;
+      heigth: 100px;
+      margin-bottom: 10px;
+    }
+    @media (min-width: 768px) {
+      body {
+        width: 720px;
+      }
+    }
+    @media (min-width: 992px) {
+      body {
+        width: 940px;
+      }
+    }
+    @media (min-width: 1200px) {
+      body {
+        width: 940px;
+      }
+    }
+    @media (max-width: 768px) {
+      #big-logo {
+        display: none;
+      }
+      nav {
+        flex-direction: column;
+      }
+      nav ul {
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<nav class="navbar navbar-default navbar-static-top" role="navigation">
-  <div class="container">
-
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#caa-navbar-collapse">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <div class="navbar-brand logo">
-        <img src="/img/navbar_logo.svg" alt="Cover Art Archive" />
-      </div>
-    </div>
-
-    <div class="collapse navbar-collapse" id="caa-navbar-collapse">
-      <ul class="nav navbar-nav navbar-right">
-        <li><a href="https://musicbrainz.org/doc/Cover_Art_Archive/API">API docs</a></li>
-        <li><a href="https://tickets.metabrainz.org/projects/CAA">Bug tracker</a></li>
-        <li><a href="https://github.com/metabrainz/artwork-redirect">Source code</a></li>
-      </ul>
-    </div>
-
-  </div>
+<nav role="navigation">
+  <img src="/img/navbar_logo.svg" alt="Cover Art Archive">
+  <ul>
+    <li>
+      <a href="https://musicbrainz.org/doc/Cover_Art_Archive/API">
+        API docs
+      </a>
+    </li>
+    <li>
+      <a href="https://tickets.metabrainz.org/projects/CAA">
+        Bug tracker
+      </a>
+    </li>
+    <li>
+      <a href="https://github.com/metabrainz/artwork-redirect">
+        Source code
+      </a>
+    </li>
+  </ul>
 </nav>
 
-<div class="container">
+<img src="/img/big_logo.svg" id="big-logo" />
 
-  <img src="/img/big_logo.svg" id="big-logo" />
+<h1>Welcome to the Cover Art Archive!</h1>
 
-  <h1>Welcome to the Cover Art Archive!</h1>
-
+<div id="page">
   <div id="images">
-    <a href="https://archive.org"><img id="ia_logo" src="/img/ia.svg"></a>
-    <a href="https://musicbrainz.org"><img id="mb_logo" src="/img/musicbrainz.svg"></a>
+    <a href="https://archive.org">
+      <img id="ia_logo" src="/img/ia.svg">
+    </a>
+    <a href="https://musicbrainz.org">
+      <img id="mb_logo" src="/img/musicbrainz.svg">
+    </a>
   </div>
 
-  <div id="text">
-    <p>
-      The Cover Art Archive is a joint project between the <a href="//archive.org">Internet Archive</a>
-      and <a href="//musicbrainz.org">MusicBrainz</a>, whose goal is to make cover art images
-      available to everyone on the Internet in an organised and convenient way.
-    </p>
+  <p>
+    The Cover Art Archive is a joint project between the
+    <a href="//archive.org">Internet Archive</a> and
+    <a href="//musicbrainz.org">MusicBrainz</a>, whose goal is to make cover
+    art images available to everyone on the Internet in an organised and
+    convenient way.
+  </p>
 
-    <p>
-      Images in the archive are curated by the MusicBrainz community and go through a peer review process
-      to ensure that they are correct, free of spam and of the best quality. If you would like to
-      contribute cover art, <a href="//musicbrainz.org/register">create a MusicBrainz account</a>
-      and <a href="//musicbrainz.org/doc/How_to_Add_Cover_Art">follow the guide</a>. To see what
-      has been added to the archive recently, please see the <a href="//archive.org/details/coverartarchive">Cover
-      Art Archive page</a> at the Internet Archive.
-    </p>
+  <p>
+    Images in the archive are curated by the MusicBrainz community and go
+    through a peer review process to ensure that they are correct, free of
+    spam and of the best quality. If you would like to contribute cover art,
+    <a href="//musicbrainz.org/register">create a MusicBrainz account</a>
+    and <a href="//musicbrainz.org/doc/How_to_Add_Cover_Art">follow the guide</a>.
+    To see what has been added to the archive recently, please see the
+    <a href="//archive.org/details/coverartarchive">Cover Art Archive page</a>
+    at the Internet Archive.
+  </p>
 
-    <p>
-      MusicBrainz also provides <a href="//musicbrainz.org/doc/Cover_Art_Archive/API">API documentation</a>
-      for retrieving cover art via a <a href="//musicbrainz.org/doc/MBID">release MBID</a>. A C based
-      client library <a href="https://github.com/metabrainz/libcoverart">libcoverart</a> is available as well
-      as the Java <a href="https://github.com/lastfm/coverartarchive-api">coverartarchive-api</a> library.
-    </p>
+  <p>
+    MusicBrainz also provides
+    <a href="//musicbrainz.org/doc/Cover_Art_Archive/API">API documentation</a>
+    for retrieving cover art via a
+    <a href="//musicbrainz.org/doc/MBID">release MBID</a>.
+    A C-based client library
+    <a href="https://github.com/metabrainz/libcoverart">libcoverart</a>
+    is available, as well as the Java
+    <a href="https://github.com/lastfm/coverartarchive-api">coverartarchive-api</a>
+    library.
+  </p>
 
-    <p>
-      <strong>All images are uploaded from users' computers directly to Internet Archive servers.</strong>
-      <br /><strong>All images are copyrighted by their respective copyright owners.</strong>
-    </p>
+  <p>
+    <strong>
+      All images are uploaded from users' computers directly to Internet
+      Archive servers.
+    </strong>
+    <br />
+    <strong>
+      All images are copyrighted by their respective copyright owners.
+    </strong>
+  </p>
 
-    <p>
-      If you have any questions regarding the images in coverartarchive.org, please email info [at] archive [dot] org.
-    </p>
-  </div>
-
+  <p>
+    If you have any questions regarding the images in coverartarchive.org,
+    please email info [at] archive [dot] org.
+  </p>
 </div>
-
-<script src="/js/jquery-2.1.0.min.js"></script>
-<script src="/js/bootstrap.min.js"></script>
 
 </body>
 </html>
