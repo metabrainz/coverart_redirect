@@ -28,7 +28,7 @@ import werkzeug.exceptions
 import werkzeug.urls
 import werkzeug.wrappers
 from contextlib import closing
-from artwork_redirect.request import CoverArtRedirect
+from artwork_redirect.request import ArtworkRedirect
 from artwork_redirect.loggers import get_sentry
 from sqlalchemy.pool import NullPool
 
@@ -64,7 +64,7 @@ class Server(object):
     def __call__(self, request):
         try:
             with closing(self.engine.connect()) as conn:
-                response = CoverArtRedirect(self.config, conn).handle(request)
+                response = ArtworkRedirect(self.config, conn).handle(request)
         except werkzeug.exceptions.HTTPException as e:
             get_sentry().captureException()
             response = e.get_response()

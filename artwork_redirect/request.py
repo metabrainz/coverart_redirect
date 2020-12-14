@@ -31,7 +31,12 @@ from artwork_redirect.loggers import get_sentry
 from wsgiref.util import shift_path_info
 
 
-class CoverArtRedirect(object):
+CAA_ENTITY_TYPES = ['release', 'release-group']
+EAA_ENTITY_TYPES = ['event']
+ALL_ENTITY_TYPES = CAA_ENTITY_TYPES + EAA_ENTITY_TYPES
+
+
+class ArtworkRedirect(object):
     """Handles index and redirect requests."""
 
     def __init__(self, config, conn):
@@ -40,9 +45,19 @@ class CoverArtRedirect(object):
         self.cmd = None
         self.proto = None
 
-    def validate_entity(self, entity):
-        if entity not in ['release', 'release-group']:
-            raise BadRequest("Only release and release-group entities are currently supported")
+    def validate_entity(self, request, entity):
+        supported_entities = ALL_ENTITY_TYPES
+
+        if request.host == 'coverartarchive.org':
+            supported_entities = CAA_ENTITY_TYPES
+        elif request.host == 'eventartarchive.org':
+            supported_entities = EAA_ENTITY_TYPES
+
+        if entity not in supported_entities:
+            raise BadRequest(
+                "Only the following entities are supported: " +
+                ", ".join(supported_entities)
+            )
 
     def validate_mbid(self, mbid):
         """Check if an MBID is syntactically valid. If not, raise a BadRequest."""
@@ -93,7 +108,7 @@ class CoverArtRedirect(object):
 
         return mbid
 
-    def resolve_cover_index(self, mbid):
+    def resolve_release_cover_index(self, mbid):
         """Query the database to see if the given release has any
         cover art entries, if not respond with a 404 to the request.
         """
@@ -112,6 +127,26 @@ class CoverArtRedirect(object):
             return row[0];
 
         raise NotFound("No cover art found for release %s" % (mbid))
+
+    def resolve_event_art_index(self, mbid):
+        """Query the database to see if the given event has any
+        artwork entries. If not, respond with a 404 to the request.
+        """
+
+        query = """
+            SELECT event.gid
+              FROM musicbrainz.event
+              JOIN event_art_archive.event_art ON event = event.id
+             WHERE event.gid = %(mbid)s;
+        """
+
+        resultproxy = self.conn.execute(query, {"mbid": mbid})
+        row = resultproxy.fetchone()
+        resultproxy.close()
+        if row:
+            return row[0];
+
+        raise NotFound("No artwork found for event %s" % (mbid))
 
     def resolve_release_group_cover_art(self, mbid):
         """This gets the selected front cover art for a release
@@ -153,7 +188,7 @@ class CoverArtRedirect(object):
 
         raise NotFound("No cover art found for release group %s" % (mbid))
 
-    def resolve_cover(self, mbid, type, thumbnail):
+    def resolve_release_cover(self, mbid, type, thumbnail):
         """Get the frontiest or backiest cover image."""
 
         if type == "Front":
@@ -185,7 +220,37 @@ class CoverArtRedirect(object):
         raise NotFound("No %s cover image found for release with identifier %s" % (
             type.lower(), mbid))
 
-    def resolve_image_id(self, mbid, filename, thumbnail):
+    def resolve_event_art(self, mbid, type, thumbnail):
+        """Get the frontiest artwork image."""
+
+        if type == "Front":
+            type_filter = "is_front = true"
+        else:
+            raise NotFound("No %s image found for event with identifier %s" % (
+                type.lower(), mbid))
+
+        query = """
+            SELECT index_listing.id, image_type.suffix
+              FROM event_art_archive.index_listing
+              JOIN musicbrainz.event
+                ON event_art_archive.index_listing.event = musicbrainz.event.id
+              JOIN event_art_archive.image_type
+                ON event_art_archive.index_listing.mime_type = event_art_archive.image_type.mime_type
+             WHERE musicbrainz.event.gid = %(mbid)s
+               AND """ + type_filter + """
+          ORDER BY ordering ASC LIMIT 1;
+        """
+
+        resultproxy = self.conn.execute(query, {"mbid": mbid})
+        row = resultproxy.fetchone()
+        resultproxy.close()
+        if row:
+            return "%s%s.%s" % (str(row[0]), thumbnail, row[1])
+
+        raise NotFound("No %s image found for event with identifier %s" % (
+            type.lower(), mbid))
+
+    def resolve_release_image_id(self, mbid, filename, thumbnail):
         """Get a cover image by image id."""
 
         query = """
@@ -216,39 +281,53 @@ class CoverArtRedirect(object):
 
         raise NotFound("cover image with id %s not found" % (image_id))
 
-    def handle_index(self):
-        """Serve up the one static index page."""
+    def resolve_event_image_id(self, mbid, filename, thumbnail):
+        """Get an event image by image id."""
+
+        query = """
+            SELECT event_art.id, suffix
+              FROM event_art_archive.event_art
+              JOIN musicbrainz.event
+                ON event = event.id
+              JOIN event_art_archive.image_type
+                ON event_art.mime_type = image_type.mime_type
+             WHERE event.gid = %(mbid)s
+               AND event_art.id = %(image_id)s
+          ORDER BY ordering ASC LIMIT 1;
+        """
+
+        possible_id = re.sub("[^0-9].*", "", filename)
+
         try:
-            f = open(os.path.join(self.config.static_path, "index.html"))
+            image_id = int(possible_id)
+        except ValueError:
+            raise BadRequest("%s does not not contain a valid event image id" % (filename))
+
+        resultproxy = self.conn.execute(
+            query, {"mbid": mbid, "image_id": image_id})
+        row = resultproxy.fetchone()
+        resultproxy.close()
+        if row:
+            return "%s%s.%s" % (str(row[0]), thumbnail, row[1])
+
+        raise NotFound("event image with id %s not found" % (image_id))
+
+    def handle_index(self, request, index_page=None):
+        """Serve up the one static index page."""
+        if index_page is None:
+            index_page = "index.html"
+            if request.host == 'coverartarchive.org':
+                index_page = "coverartarchive.html"
+            elif request.host == "eventartarchive.org":
+                index_page = "eventartarchive.html"
+        try:
+            f = open(os.path.join(self.config.static_path, index_page))
         except IOError:
             get_sentry().captureException()
             return Response(status=500, response="Internal Server Error")
         txt = f.read()
         f.close()
         return Response(response=txt, mimetype='text/html')
-
-    def handle_css(self):
-        try:
-            f = open(os.path.join(self.config.static_path, "css", "main.css"))
-        except IOError:
-            get_sentry().captureException()
-            return Response(status=500, response="Internal Server Error")
-        txt = f.read()
-        f.close()
-        return Response(response=txt, mimetype="text/css")
-
-    def handle_js(self, name):
-        js_dir = os.path.join(self.config.static_path, "js")
-        if name not in os.listdir(js_dir):
-            raise NotFound
-        try:
-            f = open(os.path.join(js_dir, name))
-        except IOError:
-            get_sentry().captureException()
-            return Response(status=500, response="Internal Server Error")
-        txt = f.read()
-        f.close()
-        return Response(response=txt, mimetype="application/javascript")
 
     def handle_svg_img(self, name):
         img_dir = os.path.join(self.config.static_path, "img")
@@ -288,7 +367,7 @@ class CoverArtRedirect(object):
             raise NotImplemented()
         if entity:
             if not entity == '*':
-                self.validate_entity(entity)
+                self.validate_entity(request, entity)
             elif pop_path_info(request.environ) is not None:
                 # There's more than a single asterisk in the request uri
                 raise BadRequest()
@@ -323,15 +402,15 @@ class CoverArtRedirect(object):
 
     def handle_release(self, request, mbid, filename):
         if not filename:
-            mbid = self.resolve_cover_index(mbid)
+            mbid = self.resolve_release_cover_index(mbid)
             return self.handle_dir(request, mbid)
 
         if filename.startswith('front'):
-            filename = self.resolve_cover(mbid, 'Front', self.thumbnail(filename))
+            filename = self.resolve_release_cover(mbid, 'Front', self.thumbnail(filename))
         elif filename.startswith('back'):
-            filename = self.resolve_cover(mbid, 'Back', self.thumbnail(filename))
+            filename = self.resolve_release_cover(mbid, 'Back', self.thumbnail(filename))
         else:
-            filename = self.resolve_image_id(
+            filename = self.resolve_release_image_id(
                 mbid, filename, self.thumbnail(filename))
 
         return self.handle_redirect(request, mbid, filename)
@@ -341,7 +420,7 @@ class CoverArtRedirect(object):
         if not filename:
             return self.handle_dir(request, release_mbid)
         elif filename.startswith('front'):
-            filename = self.resolve_cover(
+            filename = self.resolve_release_cover(
                 release_mbid, 'Front', self.thumbnail(filename))
             return self.handle_redirect(
                 request, release_mbid, filename)
@@ -350,6 +429,19 @@ class CoverArtRedirect(object):
                 status=400,
                 response="%s not supported for release groups." % filename,
             )
+
+    def handle_event(self, request, mbid, filename):
+        if not filename:
+            mbid = self.resolve_event_art_index(mbid)
+            return self.handle_dir(request, mbid)
+
+        if filename.startswith('front'):
+            filename = self.resolve_event_art(mbid, 'Front', self.thumbnail(filename))
+        else:
+            filename = self.resolve_event_image_id(
+                mbid, filename, self.thumbnail(filename))
+
+        return self.handle_redirect(request, mbid, filename)
 
     def handle_redirect(self, request, mbid, filename):
         """Handle the 307 redirect."""
@@ -372,19 +464,19 @@ class CoverArtRedirect(object):
             return self.handle_options(request, entity)
 
         if not entity:
-            return self.handle_index()
+            return self.handle_index(request)
+        elif entity == "coverartarchive.html":
+            return self.handle_index(request, "coverartarchive.html")
+        elif entity == "eventartarchive.html":
+            return self.handle_index(request, "eventartarchive.html")
         elif entity == "robots.txt":
             return self.handle_robots()
-        elif entity == "main.css":
-            return self.handle_css()
         elif entity == "img":
             return self.handle_svg_img(pop_path_info(request.environ))
-        elif entity == "js":
-            return self.handle_js(pop_path_info(request.environ))
         elif entity == 'api':
             return self.handle_api(request)
 
-        self.validate_entity(entity)
+        self.validate_entity(request, entity)
 
         req_mbid = shift_path_info(request.environ)
         self.validate_mbid(req_mbid)
@@ -394,5 +486,7 @@ class CoverArtRedirect(object):
 
         if entity == 'release-group':
             return self.handle_release_group(request, mbid, filename)
-        else:
+        elif entity == 'release':
             return self.handle_release(request, mbid, filename)
+        elif entity == 'event':
+            return self.handle_event(request, mbid, filename)

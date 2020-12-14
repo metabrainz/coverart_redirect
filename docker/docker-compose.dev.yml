@@ -12,4 +12,6 @@ services:
       - "8080:8081"
 
   mbs_db_test:
+    environment:
+      POSTGRES_PASSWORD: art
     image: metabrainz/musicbrainz-test-database:production

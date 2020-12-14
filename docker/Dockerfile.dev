@@ -17,14 +17,7 @@ RUN pip install -U cffi
 COPY requirements.txt /code/
 RUN pip install -r requirements.txt
 
-# Node dependencies
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
-RUN apt-get install -y nodejs
-COPY package.json package-lock.json /code/
-RUN npm install
-
 COPY . /code/
 RUN cp config.default.ini config.ini
-RUN ./node_modules/.bin/lessc ./static/css/main.less > ./static/css/main.css
 
 CMD ["python", "artwork_redirect_server.py"]

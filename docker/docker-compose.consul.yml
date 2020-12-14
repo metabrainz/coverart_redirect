@@ -41,6 +41,7 @@ services:
 
   postgres-master:
     environment:
+      POSTGRES_PASSWORD: art
       SERVICE_54321_NAME: pgbouncer-master
     image: metabrainz/musicbrainz-test-database:production
     ports:
