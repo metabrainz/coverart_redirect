@@ -11,5 +11,6 @@ services:
 
   mbs_db_test:
     environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_PASSWORD: art
     image: metabrainz/musicbrainz-test-database:production
